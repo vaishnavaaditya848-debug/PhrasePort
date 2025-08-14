@@ -1,0 +1,141 @@
+/** Google Apps Script Web App backend for WriteCraft
+ * Deploy: Deploy > New deployment > Web app > Anyone
+ * Optional: Set GEMINI_API_KEY in Project properties > Script properties
+ */
+const MODEL = "gemini-1.5-flash-latest";
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents || "{}");
+    const output = generateText(data);
+    return ContentService
+      .createTextOutput(JSON.stringify({ text: output }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: String(err) }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function generateText(payload) {
+  const props = PropertiesService.getScriptProperties();
+  const API_KEY = props.getProperty("GEMINI_API_KEY") || "";
+  if (!API_KEY) {
+    return offlineTemplate(payload);
+  }
+  const prompt = buildPrompt(payload);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
+  const body = { contents: [{ role: "user", parts: [{ text: prompt }]}] };
+
+  const res = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(body),
+    muteHttpExceptions: true
+  });
+  const json = JSON.parse(res.getContentText() || "{}");
+  const text = (((json.candidates || [])[0] || {}).content || {}).parts?.[0]?.text || "";
+  return text || offlineTemplate(payload);
+}
+
+function buildPrompt(p) {
+  const type = p.type || "essay";
+  const topic = p.topic || "General topic";
+  const details = p.details || "";
+  const tone = p.tone || "formal";
+  const words = p.words || 200;
+  const language = p.language || "English";
+  const formatting = p.formatting || "plain";
+
+  return `You are a professional document writer.
+Task: ${type}
+Topic: ${topic}
+Details: ${details}
+Tone: ${tone}
+Language: ${language}
+Word limit: ${words}
+Formatting: ${formatting}
+
+Write the final ${type} ready for use. Avoid meta commentary. If "formatting" is markdown, use proper headings/lists; otherwise plain text.`;
+}
+
+// Fallback if no API key set or API fails
+function offlineTemplate(p) {
+  const lang = p.language || "English";
+  const words = Number(p.words || 200);
+  function lipsum(language, words, type) {
+    const seed = (type + language).length;
+    const english = "This is placeholder text so your tool works offline. Connect the free backend to generate real AI content tailored to your inputs.";
+    const hindi = "यह प्लेसहोल्डर टेक्स्ट है ताकि आपका टूल ऑफ़लाइन भी काम करे। असली एआई सामग्री पाने के लिए बैकएंड जोड़ें।";
+    const gujarati = "આ પ્લેસહોલ્ડર લખાણ છે જેથી તમારું ટૂલ ઓફલાઇન પણ કામ કરે. સાચું એઆઈ કન્ટેન્ટ મેળવવા બેકએન્ડ જોડો.";
+    const pick = language === "Hindi" ? hindi : language === "Gujarati" ? gujarati : english;
+    const arr = pick.split(" ");
+    let out = [];
+    for (let i = 0; i < words; i++) out.push(arr[(i + seed) % arr.length]);
+    return out.join(" ");
+  }
+  const type = p.type || "essay";
+  const topic = p.topic || "General topic";
+
+  if (type === "notice") {
+    return `NOTICE
+Topic: ${topic}
+${p.details ? `Details: ${p.details}\n` : ""}
+Tone: ${p.tone || "formal"} | Language: ${lang} | ~${words} words
+
+${lipsum(lang, words, 'notice')}`.trim();
+  }
+  if (type === "email") {
+    return `Subject: ${topic}
+
+Dear [Recipient],
+
+${lipsum(lang, Math.max(80, words - 40), 'email')}
+
+Regards,
+[Your Name]`.trim();
+  }
+  if (type === "letter") {
+    return `LETTER — ${topic}
+
+[Sender Address]
+[Date]
+
+Dear [Recipient],
+
+${lipsum(lang, words, 'letter')}
+
+Sincerely,
+[Your Name]`.trim();
+  }
+  if (type === "dialogue") {
+    return `DIALOGUE — ${topic}
+A: ${lipsum(lang, Math.floor(words/4), 'dialogue')}
+B: ${lipsum(lang, Math.floor(words/4), 'dialogue')}
+A: ${lipsum(lang, Math.floor(words/4), 'dialogue')}
+B: ${lipsum(lang, Math.floor(words/4), 'dialogue')}`.trim();
+  }
+  if (type === "report") {
+    return `REPORT: ${topic}
+
+SUMMARY:
+${lipsum(lang, Math.floor(words*0.4), 'report')}
+
+FINDINGS:
+- ${lipsum(lang, Math.floor(words*0.2), 'report')}
+- ${lipsum(lang, Math.floor(words*0.2), 'report')}
+
+RECOMMENDATION:
+${lipsum(lang, Math.floor(words*0.2), 'report')}`.trim();
+  }
+  // essay default
+  return `ESSAY: ${topic}
+${lipsum(lang, Math.floor(words*0.3), 'essay')}
+
+BODY:
+${lipsum(lang, Math.floor(words*0.5), 'essay')}
+
+CONCLUSION:
+${lipsum(lang, Math.floor(words*0.2), 'essay')}`.trim();
+}

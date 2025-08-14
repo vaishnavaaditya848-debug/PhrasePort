@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WriteCraft — Free AI Document Generator</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="config.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <header>
+    <h1>WriteCraft</h1>
+    <p>Create Notices, Emails, Letters, Dialogues, Reports & Essays — free.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="row">
+        <label for="docType">Document Type</label>
+        <select id="docType">
+          <option value="notice">Notice</option>
+          <option value="email">Email</option>
+          <option value="letter">Letter</option>
+          <option value="dialogue">Dialogue</option>
+          <option value="report">Report</option>
+          <option value="essay">Essay</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="topic">Topic / Subject</label>
+        <input id="topic" placeholder="e.g., School sports day announcement" />
+      </div>
+
+      <div class="row">
+        <label for="details">Key Details</label>
+        <textarea id="details" rows="4" placeholder="Optional: audience, date/time, points to cover, names, context"></textarea>
+      </div>
+
+      <div class="grid-2">
+        <div class="row">
+          <label for="tone">Tone</label>
+          <select id="tone">
+            <option value="formal">Formal</option>
+            <option value="semi-formal">Semi-formal</option>
+            <option value="casual">Casual</option>
+            <option value="friendly">Friendly</option>
+            <option value="persuasive">Persuasive</option>
+            <option value="concise">Concise</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="words">Word Limit</label>
+          <input id="words" type="number" min="50" max="1500" value="200" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="row">
+          <label for="language">Language</label>
+          <select id="language">
+            <option value="English">English</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Gujarati">Gujarati</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="formatting">Formatting</label>
+          <select id="formatting">
+            <option value="plain">Plain text</option>
+            <option value="markdown">Markdown</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="generateBtn">Generate</button>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <label for="output">Output</label>
+        <textarea id="output" rows="18" placeholder="Your AI generated document will appear here..."></textarea>
+      </div>
+      <div class="actions">
+        <button id="copyBtn">Copy</button>
+        <button id="downloadBtn">Download .txt</button>
+      </div>
+      <p class="hint">Tip: Works even without a backend (offline template). To enable real AI, add a free backend and set BACKEND_URL in config.js.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built with ❤️ for ₹0. Host on GitHub Pages. Optional free backend: Google Apps Script (Gemini free tier).</p>
+  </footer>
+</body>
+</html>
